@@ -4,17 +4,24 @@ import sqlite3
 import Queue
 import time
 import networkx as nx
+import logging
+logging.basicConfig(filename='example.log',level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+import debug
+logger.info("test")
+logging.warn("test2")
 from fetchers import *
 
 def find_next():
    return find_next_hops_pre()
 
 def find_next_hops_pre():
-   print "Searching"
+   logging.info("Searching")
    c = conn.cursor()
    c.execute("select t.id,t.kind,t.priority,t.other from todo as t order by t.priority asc")
    res = c.fetchone()
-   print "Priority: %f" % res[2]
+   logging.info( "Priority: %f" % res[2])
    if res[1] == "tweet":
       return TweetsFetcher(res[0], res[3])
    elif res[1] == "user":
@@ -27,7 +34,7 @@ def find_next_hops_pre():
       raise Exception("Invalid todo kind") 
    conn.commit()
    c.close()
-   print "Done: ", res
+   logging.info("Done: " + str(res))
    return res
 
 def remove_todo(id, kind):
@@ -124,5 +131,5 @@ while True:
             print "Need to wait %02d minutes" % ((timeToWaitUntil-time.time())/60)
             time.sleep(60)
       else:
-         print exception.reason
+         logging.exception( exception.reason)
          raise exception

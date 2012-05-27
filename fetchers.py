@@ -1,4 +1,5 @@
 import time
+import logging
 
 def username(user_id, conn):
    c = conn.cursor()
@@ -19,7 +20,7 @@ class UserFetcher(object):
       friends = tweepy.Cursor(tweepy.api.friends, id=self.user_id)
       numExplored = 0
       user = username(self.user_id, conn)
-      print ("Exploring friends of %s" % user)
+      logging.info("Exploring friends of %s" % user)
       for friend in friends.items():
          if numExplored > 99:
             break
@@ -33,6 +34,7 @@ class UserFetcher(object):
             c.execute("select distanceFromSource from users where id=?", (self.user_id,))
             res = c.fetchone()
             distance = res[0]+1
+            logging.debug("Inserting friend %d" % friend.id)
             c.execute("insert into users values (?, ?, ?, ?, ?, ?, NULL)",
                   (friend.id
                   , friend.screen_name
@@ -41,11 +43,13 @@ class UserFetcher(object):
                   , distance
                   , int(time.time())))
             outLinks = 0
+            logging.debug("Inserting user to do: %d" % friend.id)
             c.execute('''insert into todo values (?, ?, NULL, ?);''', (friend.id, "user", distance))
             
             #tweets = TweetsFetcher(friend.id)
             #tweets.explore(tweepy, conn)
 
+            logging.debug("Inserting tweet todo with id=%d" % friend.id)
             c.execute('''insert into todo values (?, ?, ?, ?);''', 
                   (friend.id, "tweet", None, distance))
          else:
@@ -97,7 +101,7 @@ class TweetsFetcher(object):
          conn.commit()
          c.close()
    def explore(self, tweepy, conn):
-      print("Exploring tweets of user %d %s before tweet %s" %
+      logging.info("Exploring tweets of user %d %s before tweet %s" %
          (self.user_id, username(self.user_id, conn), str(self.before_id)))
       if self.before_id:
          tweets = tweepy.api.user_timeline(id=self.user_id, max_id=self.before_id)
@@ -153,7 +157,7 @@ class TweetFetcher(object):
    def __init__(self, id):
       self.id = id
    def explore(self, tweepy, conn):
-      print("Exploring tweet with id %d" % self.id)
+      logging.info("Exploring tweet with id %d" % self.id)
       tweet = tweepy.api.get_status(self.id)
       c = conn.cursor()
       c.execute('''insert into tweets values (
