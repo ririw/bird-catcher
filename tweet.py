@@ -5,12 +5,9 @@ import Queue
 import time
 import networkx as nx
 import logging
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logging.basicConfig(filename='fetcher.log',level=logging.DEBUG)
+logger = logging.root
 logger.addHandler(logging.StreamHandler())
-import debug
-logger.info("test")
-logging.warn("test2")
 from fetchers import *
 
 def find_next():
@@ -98,7 +95,7 @@ try:
    conn.commit()
    c.close()
 except sqlite3.OperationalError as e:
-   print e
+   logging.exception(e)
    pass
 kristy = 18131073
 try:
@@ -121,14 +118,14 @@ while True:
       toExplore.explore(tweepy, conn)
    except tweepy.error.TweepError as exception:
       if exception.reason == u'Not authorized':
-         print 'Not authorized'
+         logging.warn('Not authorized. User: %s' % str(toExplore))
          toExplore.remove(conn)
          continue
       elif exception.reason == u'Rate limit exceeded. Clients may not make more than 150 requests per hour.':
-         print "Waiting for counters to reset:"
+         logging.info("Waiting for counters to reset:")
          timeToWaitUntil = tweepy.api.rate_limit_status()['reset_time_in_seconds']
          while time.time() < timeToWaitUntil:
-            print "Need to wait %02d minutes" % ((timeToWaitUntil-time.time())/60)
+            logging.info( "Need to wait %02d minutes" % ((timeToWaitUntil-time.time())/60))
             time.sleep(60)
       else:
          logging.exception( exception.reason)

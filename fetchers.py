@@ -87,6 +87,8 @@ class UserFetcher(object):
       c.execute('''delete from todo where id=? and kind='user';''', (self.user_id, ))
       conn.commit()
       c.close()
+   def __str__(self):
+      return "User %s " % (self.user_id)
 
 class TweetsFetcher(object):
    def __init__(self, user_id, before_id=None, clear_todo=True):
@@ -108,8 +110,10 @@ class TweetsFetcher(object):
       else:
          tweets = tweepy.api.user_timeline(id=self.user_id)
       lastID = None
+      logging.debug("Before %s" % self.before_id)
       for tweet in tweets:
          if tweet.id == self.before_id:
+            logging.debug("Continuing")
             continue
          #if '#' in tweet.text or \
             #'@' in tweet.text or \
@@ -117,6 +121,7 @@ class TweetsFetcher(object):
             #tweet = TweetFetcher(tweet.id)
             #tweet.explore(tweepy, conn)
             #lastID = tweet.id
+         logging.debug("inserting tweet with id %s and author %s" % (tweet.id, self.user_id))
          c = conn.cursor()
          c.execute('''insert into tweets values (
             ?, -- id
@@ -139,6 +144,7 @@ class TweetsFetcher(object):
               , tweet.retweet_count
             ))
          lastID = tweet.id
+         logging.debug("LastID: %s" % lastID)
          conn.commit()
          c.close()
       c = conn.cursor()
@@ -148,10 +154,14 @@ class TweetsFetcher(object):
       c.close()
       c = conn.cursor()
       c.execute('''delete from todo where id=? and kind='tweet';''', (self.user_id, ))
-      c.execute('''insert into todo values (?, ?, ?, ?);''', 
-            (self.user_id, "tweet", lastID, newPriority))
+      logging.debug("LastID: %s" % str(lastID))
+      if (lastID):
+         c.execute('''insert into todo values (?, ?, ?, ?);''', 
+               (self.user_id, "tweet", lastID, newPriority))
       conn.commit()
       c.close()
+   def __str__(self):
+      return "Tweets of %s before ID: %s" % (self.user_id, self.before_id)
 
 class TweetFetcher(object):
    def __init__(self, id):
@@ -183,3 +193,5 @@ class TweetFetcher(object):
       lastID = tweet.id
       conn.commit()
       c.close()
+   def __str__(self):
+      return "Tweet with ID: %s" % self.id
