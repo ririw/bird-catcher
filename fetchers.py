@@ -150,7 +150,7 @@ class TweetsFetcher(object):
       c = conn.cursor()
       newPriority_fetch = c.execute(
             "select priority from todo where id=?", (self.user_id,))
-      newPriority = c.fetchone()[0]*(1.5)
+      newPriority = c.fetchone()[0]*(1.2)
       c.close()
       c = conn.cursor()
       c.execute('''delete from todo where id=? and kind='tweet';''', (self.user_id, ))
