@@ -97,18 +97,18 @@ try:
 except sqlite3.OperationalError as e:
    logging.exception(e)
    pass
-kristy = 18131073
+jack = jack
 try:
    c = conn.cursor()
    c.execute('''insert into users values 
-         ( 18131073
-         , 'fubbai'
-         , 110
-         , 175
+         ( 20
+         , 'jack'
+         , 2003219
+         , 1172
          , 0
          , ?
          , null);''', (int(time.time()),));
-   c.execute('''insert into todo values (18131073, "user", NULL, 1);''');
+   c.execute('''insert into todo values (20, "user", NULL, 1);''');
    conn.commit()
 except sqlite3.IntegrityError:
    pass
