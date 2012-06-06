@@ -113,13 +113,13 @@ except sqlite3.OperationalError as e:
 try:
    c = conn.cursor()
    c.execute('''insert into users values 
-         ( 20
-         , 'jack'
-         , 2003219
-         , 1172
+         ( ?
+         , ?
+         , ?
+         , ?
          , 0
          , ?
-         , null);''', (int(time.time()),));
+         , null);''', (secrets.firstUser['id'], secrets.firstUser['name'], secrets.firstUser['followers'], secrets.firstUser['friends'], int(time.time()),));
    c.execute('''insert into todo values (20, "user", NULL, 1);''');
    conn.commit()
 except sqlite3.IntegrityError:
