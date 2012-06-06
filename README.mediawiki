@@ -1,0 +1,18 @@
+= What is it =
+It mines twitter! Probably impolitely, but I'm working on that.
+
+= What does it get? =
+ * Users
+ * Tweets
+
+= How does it get them? =
+You start with a seed user. Change this manually in the config file.
+
+The config file is one called secrets.py. Copy secrets.vc.py to secrets.py
+and then edit that file.
+
+= Where does it put them? =
+Into an sqlite database.
+
+= Todo =
+ * Interactive auth
