@@ -8,6 +8,7 @@ import logging
 logging.basicConfig(filename='fetcher.log',level=logging.DEBUG)
 logger = logging.root
 logger.addHandler(logging.StreamHandler())
+import secrets
 from fetchers import *
 
 def find_next():
@@ -41,6 +42,18 @@ def remove_todo(id, kind):
    c.close()
 
 conn = sqlite3.connect('./graph.db')
+authData = sqlite3.connect('./auth.db')
+auth = tweepy.OAuthHandler(secrets.consumer_token, secrets.consumer_secret)
+auth.set_access_token(secrets.access_key, secrets.access_secret)
+#try:
+#       redirect_url = auth.get_authorization_url()
+#except tweepy.TweepError:
+#       print 'Error! Failed to get request token.'
+#       raise
+#
+#verifier = raw_input('Verifier:')
+
+api = tweepy.API(auth)
 
 try:
    c = conn.cursor()
@@ -97,7 +110,6 @@ try:
 except sqlite3.OperationalError as e:
    logging.exception(e)
    pass
-jack = jack
 try:
    c = conn.cursor()
    c.execute('''insert into users values 
@@ -115,7 +127,7 @@ except sqlite3.IntegrityError:
 while True:
    try:
       toExplore = find_next();
-      toExplore.explore(tweepy, conn)
+      toExplore.explore(tweepy, api, conn)
    except tweepy.error.TweepError as exception:
       if exception.reason == u'Not authorized':
          logging.warn('Not authorized. User: %s' % str(toExplore))
