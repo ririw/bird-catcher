@@ -2,8 +2,8 @@
 It mines twitter! Probably impolitely, but I'm working on that.
 
 = What does it get? =
- * Users
- * Tweets
+* Users
+* Tweets
 
 = How does it get them? =
 You start with a seed user. Change this manually in the config file.
@@ -15,4 +15,4 @@ and then edit that file.
 Into an sqlite database.
 
 = Todo =
- * Interactive auth
+* Interactive auth
