@@ -5,11 +5,23 @@ import Queue
 import time
 import networkx as nx
 import logging
-logging.basicConfig(filename='fetcher.log',level=logging.DEBUG)
+logging.basicConfig(filename='fetcher.log',level=logging.INFO)
 logger = logging.root
 logger.addHandler(logging.StreamHandler())
 import secrets
 from fetchers import *
+
+def printInfo():
+   c = conn.cursor()
+   c.execute("select count(*) from users")
+   users = c.fetchone()[0]
+   c.execute("select count(*) from following")
+   followers = c.fetchone()[0]
+   c.execute("select count(*) from tweets")
+   tweets = c.fetchone()[0]
+   conn.commit()
+   c.close()
+   print("I have %d users, %d tweets and %d follow relations." % (users, tweets, followers))
 
 def find_next():
    return find_next_hops_pre()
@@ -120,14 +132,16 @@ try:
          , 0
          , ?
          , null);''', (secrets.firstUser['id'], secrets.firstUser['name'], secrets.firstUser['followers'], secrets.firstUser['friends'], int(time.time()),));
-   c.execute('''insert into todo values (20, "user", NULL, 1);''');
+   c.execute('''insert into todo values (?, "user", NULL, 1);''', (secrets.firstUser['id'], ));
    conn.commit()
 except sqlite3.IntegrityError:
    pass
 while True:
    try:
+      printInfo()
       toExplore = find_next();
       toExplore.explore(tweepy, api, conn)
+      time.sleep(30)
    except tweepy.error.TweepError as exception:
       if exception.reason == u'Not authorized':
          logging.warn('Not authorized. User: %s' % str(toExplore))
@@ -139,6 +153,10 @@ while True:
          while time.time() < timeToWaitUntil:
             logging.info( "Need to wait %02d minutes" % ((timeToWaitUntil-time.time())/60))
             time.sleep(60)
+      elif exception.reason == u'Failed to send request: [Errno -2] Name or service not known':
+         logging.warn("Network issues, will wait for a few minutes and try again")
+         time.sleep(120)
+
       else:
          logging.exception( exception.reason)
          raise exception

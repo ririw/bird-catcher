@@ -22,7 +22,7 @@ class UserFetcher(object):
       user = username(self.user_id, conn)
       logging.info("Exploring friends of %s" % user)
       for friend in friends.items():
-         if numExplored > 99:
+         if numExplored > 299:
             break
          numExplored += 1
          #print ("adding friend of %s \t:\t%s" % (user, friend.screen_name))
@@ -150,7 +150,7 @@ class TweetsFetcher(object):
       c = conn.cursor()
       newPriority_fetch = c.execute(
             "select priority from todo where id=?", (self.user_id,))
-      newPriority = c.fetchone()[0]*(1.2)
+      newPriority = c.fetchone()[0]*(1.05)
       c.close()
       c = conn.cursor()
       c.execute('''delete from todo where id=? and kind='tweet';''', (self.user_id, ))
