@@ -32,20 +32,21 @@ def find_next_hops_pre():
    c.execute("select t.id,t.kind,t.priority,t.other from todo as t order by t.priority asc")
    res = c.fetchone()
    logging.info( "Priority: %f" % res[2])
+   result = None
    if res[1] == "tweet":
-      return TweetsFetcher(res[0], res[3])
+       result = TweetsFetcher(res[0], res[3])
    elif res[1] == "user":
-      return UserFetcher(res[0])
+       result = UserFetcher(res[0])
    elif res[1] == "url":
-      return URLFetcher(res[0])
+       result = URLFetcher(res[0])
    elif res[1] == "tag":
-      return TagFetcher(res[0])
+       result = TagFetcher(res[0])
    else:
       raise Exception("Invalid todo kind") 
    conn.commit()
    c.close()
    logging.info("Done: " + str(res))
-   return res
+   return result
 
 def remove_todo(id, kind):
    c = conn.cursor()
@@ -53,7 +54,6 @@ def remove_todo(id, kind):
    conn.commit()
    c.close()
 
-conn = sqlite3.connect('./graph.db')
 authData = sqlite3.connect('./auth.db')
 auth = tweepy.OAuthHandler(secrets.consumer_token, secrets.consumer_secret)
 auth.set_access_token(secrets.access_key, secrets.access_secret)
@@ -67,6 +67,7 @@ auth.set_access_token(secrets.access_key, secrets.access_secret)
 
 api = tweepy.API(auth)
 
+conn = sqlite3.connect('./graph.db')
 try:
    c = conn.cursor()
    c.execute('''create table users (
@@ -77,6 +78,7 @@ try:
       distanceFromSource integer,
       added integer,
       removed integer,
+      include bool default 1,
       constraint un unique (id));''')
    c.execute('''create table tweets (
       id integer,
@@ -88,26 +90,28 @@ try:
       inReplyToTweet integer,
       retweet bool,
       retweets integer,
+      include bool default 1,
       foreign key (author) references users(id),
       constraint un unique(id)
    );''')
    c.execute('''create table usermentions (
       tweet integer,
       user integer
-   );''');
+   );''')
    c.execute('''create table hashmentions (
       tweet integer,
       tag text
-   );''');
+   );''')
    c.execute('''create table urlmentions (
       tweet integer,
       url text
-   );''');
+   );''')
    c.execute('''create table following (
       source integer,
       target integer,
       added integer,
       removed integer,
+      include integer default 1,
       constraint un unique (source, target),
       foreign key (source) references users(id),
       foreign key (target) references users(id));''')
@@ -116,9 +120,14 @@ try:
       kind string,
       other integer, 
       priority real,
-      constraint un unique (id, kind));''');
+      constraint un unique (id, kind));''')
    conn.commit()
    c.close()
+   #print "Please enter the number of seed users you wish. This will be on-top of any users in secrets.py: "
+   #numUsers = int(input())
+   #users = RandomUsersFetcher(numUsers, auth)
+   #users.explore(tweepy, api, conn)
+
 except sqlite3.OperationalError as e:
    logging.exception(e)
    pass
@@ -131,15 +140,17 @@ try:
          , ?
          , 0
          , ?
-         , null);''', (secrets.firstUser['id'], secrets.firstUser['name'], secrets.firstUser['followers'], secrets.firstUser['friends'], int(time.time()),));
+         , null
+         , 1);''', (secrets.firstUser['id'], secrets.firstUser['name'], secrets.firstUser['followers'], secrets.firstUser['friends'], int(time.time()),));
    c.execute('''insert into todo values (?, "user", NULL, 1);''', (secrets.firstUser['id'], ));
    conn.commit()
 except sqlite3.IntegrityError:
    pass
 while True:
+   toExplore = None
    try:
       printInfo()
-      toExplore = find_next();
+      toExplore = find_next()
       toExplore.explore(tweepy, api, conn)
       time.sleep(30)
    except tweepy.error.TweepError as exception:

@@ -1,5 +1,7 @@
 import time
 import logging
+import tweepy
+import tweepy.streaming
 
 def username(user_id, conn):
    c = conn.cursor()
@@ -35,7 +37,7 @@ class UserFetcher(object):
             res = c.fetchone()
             distance = res[0]+1
             logging.debug("Inserting friend %d" % friend.id)
-            c.execute("insert into users values (?, ?, ?, ?, ?, ?, NULL)",
+            c.execute("insert into users values (?, ?, ?, ?, ?, ?, NULL, 1)",
                   (friend.id
                   , friend.screen_name
                   , friend.followers_count
@@ -63,7 +65,7 @@ class UserFetcher(object):
          c.execute("select * from following where source=? and target=?",
                (self.user_id, friend.id))
          if c.fetchone() == None:
-            c.execute("insert into following values (?, ?, ?, NULL)",
+            c.execute("insert into following values (?, ?, ?, NULL, 1)",
                   (self.user_id, friend.id, int(time.time())))
             #c.execute("update users set inLinks=(select inLinks from users where id=?)+1 where id=?", (friend.id, friend.id))
             #c.execute("update users set outLinks=(select outLinks from users where id=?)+1 where id=?", (self.user_id, self.user_id))
@@ -124,15 +126,16 @@ class TweetsFetcher(object):
          logging.debug("inserting tweet with id %s and author %s" % (tweet.id, self.user_id))
          c = conn.cursor()
          c.execute('''insert into tweets values (
-            ?, -- id
-            ?, -- author
-            ?, -- text
-            ?, -- added
-            ?, -- tweeted
-            ?, -- inReplyToUser
-            ?, -- inReplyToTweet
-            ?, -- retweet
-            ?); -- retweets
+            ?,  -- id
+            ?,  -- author
+            ?,  -- text
+            ?,  -- added
+            ?,  -- tweeted
+            ?,  -- inReplyToUser
+            ?,  -- inReplyToTweet
+            ?,  -- retweet
+            ?,  -- retweets
+            1); -- include
             ''', (tweet.id 
               , self.user_id
               , tweet.text
@@ -171,15 +174,16 @@ class TweetFetcher(object):
       tweet = api.get_status(self.id)
       c = conn.cursor()
       c.execute('''insert into tweets values (
-         ?, -- id
-         ?, -- author
-         ?, -- text
-         ?, -- added
-         ?, -- tweeted
-         ?, -- inReplyToUser
-         ?, -- inReplyToTweet
-         ?, -- retweet
-         ?); -- retweets
+         ?,  -- id
+         ?,  -- author
+         ?,  -- text
+         ?,  -- added
+         ?,  -- tweeted
+         ?,  -- inReplyToUser
+         ?,  -- inReplyToTweet
+         ?,  -- retweet
+         ?,  -- retweets
+         1); -- include
       ''', ( tweet.id 
            , tweet.author.id
            , tweet.text
@@ -195,3 +199,24 @@ class TweetFetcher(object):
       c.close()
    def __str__(self):
       return "Tweet with ID: %s" % self.id
+
+class StreamListener(tweepy.StreamListener):
+    def __init__(self, conn, numNeeded):
+        self.conn = conn
+        self.numNeeded = numNeeded
+    def on_status(self, status):
+        print "HERE!"
+        #c = conn.cursor()
+        #c.execute("insert into todo values (?, ?, NULL, ?)",
+        #)
+
+class RandomUsersFetcher(object):
+    def __init__(self, numNeeded, auth):
+        self.numNeeded = numNeeded
+        self.auth = auth
+    def explore(self, tweepy, api, conn):
+        stream = StreamListener(conn, self.numNeeded)
+        streamer = tweepy.Stream(self.auth, stream)
+        streamer.sample()
+
+
