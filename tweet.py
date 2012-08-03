@@ -78,25 +78,25 @@ try:
       distanceFromSource integer,
       added integer,
       removed integer,
-      include bool default 1,
+      include integer default 1,
       constraint un unique (id));''')
    c.execute('''create table tweets (
       id integer,
       author integer,
-      text string,
+      tweettext text,
       added integer,
       tweeted integer,
       inReplyToUser integer,
       inReplyToTweet integer,
-      retweet bool,
+      retweet integer,
       retweets integer,
-      include bool default 1,
+      include integer default 1,
       foreign key (author) references users(id),
       constraint un unique(id)
    );''')
    c.execute('''create table usermentions (
       tweet integer,
-      user integer
+      username integer
    );''')
    c.execute('''create table hashmentions (
       tweet integer,
@@ -117,7 +117,7 @@ try:
       foreign key (target) references users(id));''')
    c.execute('''create table todo (
       id integer,
-      kind string,
+      kind text,
       other integer, 
       priority real,
       constraint un unique (id, kind));''')
