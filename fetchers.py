@@ -58,7 +58,7 @@ class UserFetcher(object):
             c.execute("select distanceFromSource from users where id=?", (self.user_id,))
             res = c.fetchone()
             c.execute("update users set distanceFromSource=? where id=?", (res[0]+1, friend.id))
-
+            print("Updating distance (1) of %d to %d" % (friend.id, res[0]+1))
          conn.commit()
          c.close()
          c = conn.cursor()
@@ -82,7 +82,8 @@ class UserFetcher(object):
             newMax = 0
             if newMaxSel[0] != None:
                newMax = newMaxSel[0]+1
-            c.execute('''update users set distanceFromSource=? where id=?''', (newMax, self.user_id))
+            #c.execute('''update users set distanceFromSource=? where id=?''', (newMax, self.user_id))
+            #print("Updating distance (2) of %d to %d" % (self.user_id, newMax))
             conn.commit()
             c.close()
       c = conn.cursor()
